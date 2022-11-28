@@ -14,8 +14,6 @@ typedef struct s_node
 }   t_node;
 
 stack<t_node *> stk;
-bool found, finished;
-t_node *newNode;
 
 t_node *getBTNode(int m)
 {
@@ -62,6 +60,38 @@ void insertKey(t_node *T, int m, t_node *x, t_node *y, int newKey)
     x->n = x->n + 1;
 }
 
+t_node *splitNode(t_node *T, int m, t_node *x, t_node *y, int &newKey)
+{
+    t_node *tmpNode = x;
+    insertKey(T, m, tmpNode, y, newKey);
+
+    int centerKey = (tmpNode->n / 2);
+    newKey = centerKey;
+
+    x->n = 0;
+    int i = 1;
+    while (tmpNode->K[i] < centerKey)
+    {
+        x->K[i] = tmpNode->K[i];
+        x->P[i - 1] = tmpNode->P[i - 1];
+        i++;
+        x->n = x->n + 1;
+    }
+    x->P[i - 1] = tmpNode->P[i - 1];
+
+    t_node *newNode = getBTNode(m);
+    i++;
+    while (i <= tmpNode->n)
+    {
+        newNode->K[i] = tmpNode->K[i];
+        newNode->P[i - 1] = tmpNode->P[i - 1];
+        i++;
+        newNode->n = newNode->n + 1;
+    }
+    newNode->P[i - 1] = tmpNode->P[i - 1];
+    return newNode;
+}
+
 void insertBT(t_node **T, int m, int newKey)
 {
     if (*T == NULL)
@@ -78,7 +108,47 @@ void insertBT(t_node **T, int m, int newKey)
     
     bool finished = false;
     t_node *x = stk.top();
+    stk.pop();
     t_node *y = NULL;
+
+    do
+    {
+        if (x->n < m - 1)
+        {
+            insertKey(*T, m, x, y, newKey);
+            finished = true;
+        }
+        else
+        {
+            y = splitNode(*T, m, x, y, newKey);
+            if (!stk.empty())
+            {
+                x = stk.top();
+                stk.pop();
+            }
+            else
+            {
+                *T = getBTNode(m);
+                (*T)->K[1] = newKey;
+                (*T)->P[0] = x;
+                (*T)->P[1] = y;
+                finished = true;
+            }
+        } 
+    } while (!finished);
+}
+
+void inorderBT(t_node *T)
+{
+	if (T == NULL)
+        return ;
+    int i;
+	for (i = 0; i < T->n; i++)
+    {
+		inorderBT(T->P[i]);
+		cout << T->K[i] << ' ';
+	}
+	inorderBT(T->P[i]);
 }
 
 int main()
@@ -96,7 +166,11 @@ int main()
                 break;
             file >> cmd >> num;
             if (cmd == 'i')
+            {
                 insertBT(&node, 3, num);
+                inorderBT(node);
+                cout << '\n';
+            }
             // else if (cmd == 'd')
                 // deleteBT(&node, 3, num);
         }
@@ -108,7 +182,11 @@ int main()
         {
             cin >> cmd >> num;
             if (cmd == 'i')
+            {
                 insertBT(&node, 3, num);
+                inorderBT(node);
+                cout << '\n';
+            }
             // else if (cmd == 'd')
                 // deleteBT(&node, 3, num);
         }
